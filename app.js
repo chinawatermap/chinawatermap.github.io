@@ -1,3 +1,12 @@
+// Check if Leaflet is loaded
+if (typeof L === 'undefined') {
+    document.getElementById('map').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666; text-align: center; padding: 20px;"><div><h3>Map Loading...</h3><p>Please ensure you have an internet connection to load the interactive map.</p></div></div>';
+    console.error('Leaflet library not loaded. Please check your internet connection.');
+} else {
+    initializeMap();
+}
+
+function initializeMap() {
 // Initialize the map centered on China
 const map = L.map('map').setView([35.8617, 104.1954], 5);
 
@@ -371,3 +380,9 @@ L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
 L.control.scale({ imperial: false, metric: true }).addTo(map);
 
 console.log('China Water Map initialized successfully');
+}
+
+// Initialize the map when script loads
+if (typeof L !== 'undefined') {
+    console.log('Leaflet loaded successfully');
+}
