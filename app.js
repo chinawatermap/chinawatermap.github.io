@@ -1,10 +1,21 @@
-// Check if Leaflet is loaded
-if (typeof L === 'undefined') {
-    document.getElementById('map').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666; text-align: center; padding: 20px;"><div><h3>Map Loading...</h3><p>Please ensure you have an internet connection to load the interactive map.</p></div></div>';
-    console.error('Leaflet library not loaded. Please check your internet connection.');
-} else {
+// Wait for DOM to be fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if Leaflet is loaded and map element exists
+    const mapElement = document.getElementById('map');
+    
+    if (!mapElement) {
+        console.error('Map element not found in DOM');
+        return;
+    }
+    
+    if (typeof L === 'undefined') {
+        mapElement.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666; text-align: center; padding: 20px;"><div><h3>Map Loading...</h3><p>Please ensure you have an internet connection to load the interactive map.</p></div></div>';
+        console.error('Leaflet library not loaded. Please check your internet connection.');
+        return;
+    }
+    
     initializeMap();
-}
+});
 
 function initializeMap() {
 // Initialize the map centered on China
@@ -18,25 +29,25 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // Custom icons for different types of locations
 const damIcon = L.divIcon({
-    html: '🏗️',
+    html: '<span aria-label="Dam">🏗️</span>',
     iconSize: [30, 30],
     className: 'emoji-icon'
 });
 
 const diversionIcon = L.divIcon({
-    html: '💧',
+    html: '<span aria-label="Water Diversion">💧</span>',
     iconSize: [30, 30],
     className: 'emoji-icon'
 });
 
 const riverIcon = L.divIcon({
-    html: '🌊',
+    html: '<span aria-label="River">🌊</span>',
     iconSize: [30, 30],
     className: 'emoji-icon'
 });
 
 const reservoirIcon = L.divIcon({
-    html: '⛵',
+    html: '<span aria-label="Reservoir">⛵</span>',
     iconSize: [30, 30],
     className: 'emoji-icon'
 });
@@ -265,17 +276,26 @@ const diversionLayer = L.layerGroup();
 const riversLayer = L.layerGroup();
 const reservoirsLayer = L.layerGroup();
 
+// Function to escape HTML to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Function to create detailed popup content
 function createPopupContent(item) {
-    let html = `<div class="popup-title">${item.name}</div>`;
+    let html = `<div class="popup-title">${escapeHtml(item.name)}</div>`;
     html += `<div class="popup-content">`;
-    html += `<p><strong>Type:</strong> ${item.type}</p>`;
-    html += `<p>${item.description}</p>`;
+    html += `<p><strong>Type:</strong> ${escapeHtml(item.type)}</p>`;
+    html += `<p>${escapeHtml(item.description)}</p>`;
     
     if (item.details) {
         html += `<p><strong>Details:</strong></p><ul>`;
         for (const [key, value] of Object.entries(item.details)) {
-            html += `<li><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${value}</li>`;
+            const escapedKey = escapeHtml(key.charAt(0).toUpperCase() + key.slice(1));
+            const escapedValue = escapeHtml(String(value));
+            html += `<li><strong>${escapedKey}:</strong> ${escapedValue}</li>`;
         }
         html += `</ul>`;
     }
@@ -287,14 +307,16 @@ function createPopupContent(item) {
 // Function to update info panel with detailed information
 function updateInfoPanel(item) {
     const panel = document.getElementById('infoPanel');
-    let html = `<h2>${item.name}</h2>`;
-    html += `<p><strong>${item.type}</strong></p>`;
-    html += `<p>${item.description}</p>`;
+    let html = `<h2>${escapeHtml(item.name)}</h2>`;
+    html += `<p><strong>${escapeHtml(item.type)}</strong></p>`;
+    html += `<p>${escapeHtml(item.description)}</p>`;
     
     if (item.details) {
         html += `<h3>Details</h3><ul>`;
         for (const [key, value] of Object.entries(item.details)) {
-            html += `<li><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${value}</li>`;
+            const escapedKey = escapeHtml(key.charAt(0).toUpperCase() + key.slice(1));
+            const escapedValue = escapeHtml(String(value));
+            html += `<li><strong>${escapedKey}:</strong> ${escapedValue}</li>`;
         }
         html += `</ul>`;
     }
@@ -305,7 +327,7 @@ function updateInfoPanel(item) {
             html += `<h4>✅ Positive Environmental & Social Impacts</h4>`;
             html += `<ul class="impact-list">`;
             item.environmentalImpacts.positive.forEach(impact => {
-                html += `<li>${impact}</li>`;
+                html += `<li>${escapeHtml(impact)}</li>`;
             });
             html += `</ul></div>`;
         }
@@ -315,7 +337,7 @@ function updateInfoPanel(item) {
             html += `<h4>⚠️ Negative Environmental & Social Impacts</h4>`;
             html += `<ul class="impact-list">`;
             item.environmentalImpacts.negative.forEach(impact => {
-                html += `<li>${impact}</li>`;
+                html += `<li>${escapeHtml(impact)}</li>`;
             });
             html += `</ul></div>`;
         }
@@ -324,41 +346,28 @@ function updateInfoPanel(item) {
     panel.innerHTML = html;
 }
 
+// Helper function to add markers to map
+function addMarkersToLayer(dataArray, icon, layer) {
+    dataArray.forEach(item => {
+        const marker = L.marker(item.coords, { icon: icon })
+            .bindPopup(createPopupContent(item))
+            .addTo(layer);
+        
+        marker.on('click', () => updateInfoPanel(item));
+    });
+}
+
 // Add mega dams to map
-hydroData.megaDams.forEach(dam => {
-    const marker = L.marker(dam.coords, { icon: damIcon })
-        .bindPopup(createPopupContent(dam))
-        .addTo(megaDamsLayer);
-    
-    marker.on('click', () => updateInfoPanel(dam));
-});
+addMarkersToLayer(hydroData.megaDams, damIcon, megaDamsLayer);
 
 // Add water diversion projects to map
-hydroData.waterDiversion.forEach(project => {
-    const marker = L.marker(project.coords, { icon: diversionIcon })
-        .bindPopup(createPopupContent(project))
-        .addTo(diversionLayer);
-    
-    marker.on('click', () => updateInfoPanel(project));
-});
+addMarkersToLayer(hydroData.waterDiversion, diversionIcon, diversionLayer);
 
 // Add major rivers to map
-hydroData.majorRivers.forEach(river => {
-    const marker = L.marker(river.coords, { icon: riverIcon })
-        .bindPopup(createPopupContent(river))
-        .addTo(riversLayer);
-    
-    marker.on('click', () => updateInfoPanel(river));
-});
+addMarkersToLayer(hydroData.majorRivers, riverIcon, riversLayer);
 
 // Add reservoirs to map
-hydroData.reservoirs.forEach(reservoir => {
-    const marker = L.marker(reservoir.coords, { icon: reservoirIcon })
-        .bindPopup(createPopupContent(reservoir))
-        .addTo(reservoirsLayer);
-    
-    marker.on('click', () => updateInfoPanel(reservoir));
-});
+addMarkersToLayer(hydroData.reservoirs, reservoirIcon, reservoirsLayer);
 
 // Add all layers to map by default
 megaDamsLayer.addTo(map);
@@ -380,9 +389,4 @@ L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
 L.control.scale({ imperial: false, metric: true }).addTo(map);
 
 console.log('China Water Map initialized successfully');
-}
-
-// Initialize the map when script loads
-if (typeof L !== 'undefined') {
-    console.log('Leaflet loaded successfully');
 }
