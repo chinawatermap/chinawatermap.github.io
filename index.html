@@ -55,12 +55,12 @@
     </style>
 </head>
 <body>
-    <div class="info-panel">
+    <header class="info-panel">
         <h1>China Water Map</h1>
         <p>Interactive water resources visualization</p>
-    </div>
+    </header>
 
-    <div id="map"></div>
+    <div id="map" role="application" aria-label="Interactive map of China water resources"></div>
 
     <!-- Leaflet JavaScript -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -79,17 +79,17 @@
         }).addTo(map);
 
         // Add a sample marker (example: Beijing)
-        const beijingMarker = L.marker([39.9042, 116.4074]).addTo(map);
-        beijingMarker.bindPopup('<b>Beijing</b><br>Capital of China');
+        L.marker([39.9042, 116.4074]).addTo(map)
+            .bindPopup('<h2 style="margin:0;font-size:1em;">Beijing</h2><p style="margin:0.5em 0 0 0;">Capital of China</p>');
 
         // Add a sample circle (example: water resource area)
-        const circle = L.circle([31.2304, 121.4737], {
+        L.circle([31.2304, 121.4737], {
             color: 'blue',
             fillColor: '#30f',
             fillOpacity: 0.3,
             radius: 50000
-        }).addTo(map);
-        circle.bindPopup('<b>Shanghai</b><br>Water resource area');
+        }).addTo(map)
+            .bindPopup('<h2 style="margin:0;font-size:1em;">Shanghai</h2><p style="margin:0.5em 0 0 0;">Water resource area</p>');
     </script>
 </body>
 </html>
